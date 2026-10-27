@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Probability Lab 3D | ห้องทดลองความน่าจะเป็น ม.3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+--ink:#1d2342;--muted:#667092;--line:rgba(120,130,190,.2);
+--purple:#6f5bd8;--purple2:#8f7cf0;--pink:#ef476f;--blue:#4d8cff;--green:#22b39a;--gold:#f2b84b;
+--glass:rgba(255,255,255,.68);--shadow:0 18px 50px rgba(60,66,140,.14)
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{font-family:"Prompt","Noto Sans Thai",Tahoma,system-ui,sans-serif;color:var(--ink);line-height:1.55;overflow:hidden;
+background:radial-gradient(900px 520px at 8% -10%,#e2dcff 0,transparent 60%),radial-gradient(800px 520px at 100% 0,#d8f6ef 0,transparent 55%),radial-gradient(700px 500px at 60% 110%,#ffe4ee 0,transparent 55%),#eef1fb;background-attachment:fixed}
+button{font-family:inherit}
+.glass{background:var(--glass);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);border:1px solid rgba(255,255,255,.85);box-shadow:0 8px 30px rgba(60,66,140,.12)}
+#app{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(370px,.62fr);gap:16px;height:100vh;height:100dvh;padding:16px}
+#stage{position:relative;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,.9);box-shadow:var(--shadow);background:linear-gradient(160deg,#f8f6ff 0%,#e9eeff 45%,#e3f7f2 100%);min-height:0}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:0}
+#gl:active{cursor:grabbing}
+#hotspots{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hotspot{position:absolute;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;border:0;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;font-weight:600;font-size:14px;cursor:pointer;display:grid;place-items:center;box-shadow:0 6px 18px rgba(111,91,216,.45);pointer-events:auto;transition:opacity .25s,box-shadow .25s;will-change:transform;z-index:3}
+.hotspot::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(111,91,216,.5);animation:ping 1.9s ease-out infinite}
+.hotspot .tip{position:absolute;left:46px;top:50%;transform:translateY(-50%) translateX(-6px);white-space:nowrap;padding:5px 11px;border-radius:10px;background:#1d2342;color:#fff;font-size:12px;font-weight:400;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.hotspot.flip .tip{left:auto;right:46px;transform:translateY(-50%) translateX(6px)}
+.hotspot:hover .tip,.hotspot.active .tip{opacity:1;transform:translateY(-50%)}
+.hotspot.active{background:linear-gradient(135deg,var(--gold),var(--pink));box-shadow:0 6px 22px rgba(242,184,75,.6)}
+.hotspot.hidden{opacity:0;pointer-events:none}
+@keyframes ping{0%{transform:scale(.8);opacity:.9}100%{transform:scale(1.7);opacity:0}}
+.hint{position:absolute;left:16px;top:16px;max-width:calc(100% - 140px);padding:8px 14px;border-radius:999px;font-size:12.5px;color:var(--muted);transition:opacity .6s,transform .6s;z-index:4}
+.hint.hide{opacity:0;transform:translateY(-6px);pointer-events:none}
+.tools{position:absolute;right:16px;top:16px;display:flex;gap:8px;z-index:4}
+.tool{width:42px;height:42px;border-radius:14px;cursor:pointer;font-size:19px;color:var(--ink);display:grid;place-items:center;padding:0;transition:transform .2s,background .2s}
+.tool:hover{transform:translateY(-2px)}
+.tool.on{background:var(--purple);color:#fff;border-color:var(--purple)}
+.legend{position:absolute;right:16px;top:68px;display:flex;flex-direction:column;gap:6px;padding:10px 14px;border-radius:16px;font-size:12px;z-index:4}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px}
+.legend .lt{background:rgba(111,91,216,.35);border:2px solid var(--purple)}
+.legend .le{background:var(--purple)}
+.toast{position:absolute;left:50%;top:66px;transform:translate(-50%,-14px) scale(.9);opacity:0;padding:9px 20px;border-radius:999px;font-weight:600;font-size:15px;z-index:6;pointer-events:none;transition:opacity .28s,transform .28s;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+.toast.warn{background:#fff3d6;border-color:#f8dd94;color:#8a5a00}
+.dock{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:8px;padding:8px;border-radius:22px;z-index:5;max-width:calc(100% - 24px)}
+.dbtn{border:0;border-radius:14px;padding:11px 16px;font-weight:600;font-size:14px;cursor:pointer;background:rgba(111,91,216,.1);color:var(--ink);min-height:44px;transition:transform .15s,background .2s,opacity .2s;white-space:nowrap}
+.dbtn:hover{transform:translateY(-2px)}
+.dbtn:active{transform:scale(.97)}
+.dbtn.main{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;box-shadow:0 8px 20px rgba(111,91,216,.35)}
+.dbtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.card3d{position:absolute;left:16px;bottom:86px;width:min(350px,calc(100% - 32px));padding:18px 18px 12px;border-radius:24px;opacity:0;transform:translateY(20px) scale(.96);pointer-events:none;transition:opacity .35s,transform .35s cubic-bezier(.2,.9,.3,1.2);z-index:6;background:rgba(255,255,255,.86)}
+.card3d.show{opacity:1;transform:none;pointer-events:auto}
+.card3d .x{position:absolute;right:12px;top:12px;width:30px;height:30px;border-radius:10px;border:0;background:rgba(111,91,216,.1);color:var(--muted);cursor:pointer;font-size:14px}
+.cbody.swap{animation:swap .45s ease}
+@keyframes swap{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:none}}
+.chead{display:flex;gap:12px;align-items:center;margin-bottom:8px;padding-right:30px}
+.cicon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:linear-gradient(135deg,#eee9ff,#ffe6ef);flex:0 0 auto}
+.ckick{font-size:11px;letter-spacing:.06em;color:var(--purple);font-weight:600;text-transform:uppercase}
+.card3d h3{margin:0;font-size:17px;line-height:1.3}
+.card3d p{margin:0 0 10px;font-size:13.5px;color:#3a4268}
+.live{background:linear-gradient(135deg,#f3f0ff,#e9fbf6);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:13px;font-weight:500;color:#3b3590}
+.live small{display:block;color:var(--muted);font-weight:400;margin-bottom:2px;font-size:11.5px}
+.cnav{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.cnav button{width:32px;height:32px;border-radius:10px;border:0;background:rgba(111,91,216,.1);color:var(--purple);font-size:18px;cursor:pointer}
+.dots{display:flex;gap:6px}
+.dots i{width:7px;height:7px;border-radius:50%;background:#d3d6ee;cursor:pointer;transition:all .25s}
+.dots i.on{width:20px;border-radius:6px;background:var(--purple)}
+.fallback{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:30px;z-index:9;background:rgba(244,246,255,.92);color:var(--ink);font-weight:500}
+#panel{display:flex;flex-direction:column;min-height:0;border-radius:28px;overflow:hidden;box-shadow:var(--shadow)}
+.phead{padding:20px 22px 10px}
+.prow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.tag{display:inline-block;border-radius:999px;padding:4px 12px;font-size:11.5px;font-weight:600;letter-spacing:.04em;background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff}
+.lang{display:inline-flex;gap:3px;padding:3px;border-radius:999px;background:rgba(111,91,216,.1)}
+.lang button{border:0;background:transparent;padding:6px 14px;border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted);min-height:34px}
+.lang button.active{background:#fff;color:var(--purple);box-shadow:0 3px 10px rgba(111,91,216,.2)}
+h1{font-size:clamp(22px,2.1vw,28px);margin:10px 0 4px;line-height:1.25}
+.sub{margin:0;color:var(--muted);font-size:13.5px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 22px 12px}
+.tab{border:0;border-radius:14px;padding:10px 6px;font-weight:600;font-size:13.5px;cursor:pointer;background:rgba(111,91,216,.08);color:var(--muted);transition:all .25s;min-height:42px}
+.tab.active{background:#fff;color:var(--purple);box-shadow:0 6px 16px rgba(111,91,216,.18)}
+.pbody{flex:1;min-height:0;overflow-y:auto;padding:4px 22px 26px;scrollbar-width:thin}
+.pane{display:none}
+.pane.active{display:block;animation:rise .4s ease}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+h2{font-size:16.5px;margin:18px 0 8px;display:flex;align-items:center;gap:8px}
+.muted{color:var(--muted);font-size:13px;margin:0 0 8px}
+.obj{background:rgba(255,255,255,.7);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-top:6px}
+.obj h2{margin-top:0}
+.obj p{margin:0 0 10px;font-size:13.5px}
+.formula{background:linear-gradient(135deg,#f0ecff,#e6faf5);border-radius:12px;padding:10px 12px;font-weight:600;color:#4b3fb5;text-align:center;font-size:14.5px}
+.ctl{margin:14px 0}
+.ctl label{display:flex;justify-content:space-between;align-items:center;font-weight:500;font-size:14px;gap:8px}
+.pill{background:rgba(111,91,216,.1);color:var(--purple);border-radius:999px;padding:2px 11px;font-size:12.5px;font-weight:600;white-space:nowrap}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;background:linear-gradient(90deg,var(--c) var(--p,0%),#e3e6f6 var(--p,0%));outline:0;margin:12px 0 4px;cursor:pointer;--c:var(--purple)}
+input[type=range]::-webkit-slider-runnable-track{background:transparent;height:8px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-8px;border-radius:50%;background:#fff;border:4px solid var(--c);box-shadow:0 3px 10px rgba(60,66,140,.3)}
+input[type=range]::-moz-range-track{background:transparent;height:8px}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:4px solid var(--c);box-shadow:0 3px 10px rgba(60,66,140,.3)}
+input[type=range]:disabled{opacity:.5;cursor:not-allowed}
+#red{--c:var(--pink)}#blue{--c:var(--blue)}#green{--c:var(--green)}
+.note{background:#fff8e7;border:1px solid #f8e5ad;padding:10px 13px;border-radius:12px;font-size:12.5px;margin-top:10px}
+.statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0}
+.stat{border:1px solid var(--line);border-radius:16px;padding:12px;text-align:center;background:rgba(255,255,255,.75)}
+.stat strong{display:block;font-size:22px;color:var(--purple);overflow-wrap:anywhere;line-height:1.3}
+.stat span{font-size:12px;color:var(--muted)}
+.barwrap{margin:12px 0}
+.barlabel{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;margin-bottom:5px;align-items:baseline}
+.barlabel strong{text-align:right;font-weight:600}
+.track{position:relative;height:14px;border-radius:99px;background:#e8ebf8}
+.fill{height:100%;border-radius:99px;transition:width .35s}
+.tick{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1px;border-radius:3px;background:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:rgba(255,255,255,.8);border-radius:999px;padding:7px 12px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;min-height:36px}
+.chip:hover,.chip.active{background:var(--purple);color:#fff;border-color:var(--purple);transform:translateY(-1px)}
+canvas#trend{width:100%;height:230px;border:1px solid var(--line);border-radius:16px;background:#fff;display:block}
+.question{border:1px solid var(--line);padding:14px;border-radius:16px;margin:12px 0;background:rgba(255,255,255,.7)}
+.question p{margin:0 0 10px;font-weight:600;font-size:14px}
+.options{display:grid;gap:7px}
+.options label{display:flex;gap:9px;align-items:flex-start;padding:10px 11px;border-radius:11px;background:#f6f7ff;cursor:pointer;font-size:13.5px;min-height:42px;transition:background .2s}
+.options label:hover{background:#ece8ff}
+.options input{margin-top:3px;accent-color:var(--purple)}
+.feedback{font-size:13px;margin-top:8px;font-weight:600}
+.correct{color:#12836d}.incorrect{color:#c74a72}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{border:0;border-radius:12px;padding:11px 15px;font-weight:600;cursor:pointer;background:var(--purple);color:#fff;font-size:14px;min-height:44px}
+.btn.teal{background:var(--green)}.btn.secondary{background:#eceefb;color:var(--ink)}
+#score{margin-top:12px;font-weight:700;font-size:16px;color:var(--purple)}
+@media(max-width:1000px){
+body{overflow:auto}
+#app{display:block;height:auto;padding:10px}
+#stage{position:sticky;top:10px;height:52vh;height:52dvh;min-height:340px;z-index:10;margin-bottom:12px}
+#panel{overflow:visible}
+.pbody{overflow:visible}
+.legend{display:none}
+}
+@media(max-width:600px){
+#stage{height:48vh;height:48dvh;min-height:320px;border-radius:22px}
+#panel{border-radius:22px}
+.hint{font-size:11.5px;max-width:calc(100% - 110px);padding:6px 12px}
+.card3d{left:10px;width:calc(100% - 20px);bottom:76px;padding:14px 14px 10px;max-height:62%;overflow:auto}
+.card3d p{font-size:12.5px}
+.dock{bottom:10px;gap:6px;padding:6px}
+.dbtn{padding:10px 11px;font-size:13px}
+.phead,.pbody{padding-left:16px;padding-right:16px}
+.tabs{padding-left:16px;padding-right:16px}
+.toast{font-size:13px;top:62px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<section id="stage" aria-label="3D Probability Lab">
+<canvas id="gl" tabindex="0"></canvas>
+<div id="hotspots"></div>
+<div class="hint glass" id="hint" data-i18n="hint"></div>
+<div class="tools">
+<button class="tool glass" id="btnView" type="button" data-i18n-title="tipReset">⟲</button>
+<button class="tool glass" id="btnRotate" type="button" data-i18n-title="tipRotate">⟳</button>
+</div>
+<div class="legend glass"><span><i class="lt"></i><b data-i18n="legendTheory"></b></span><span><i class="le"></i><b data-i18n="legendExp"></b></span></div>
+<div class="toast glass" id="toast"></div>
+<div class="card3d glass" id="card" role="dialog" aria-live="polite">
+<button class="x" id="cardClose" type="button" aria-label="close">✕</button>
+<div class="cbody" id="cardBody"></div>
+<div class="cnav"><button id="cardPrev" type="button" aria-label="previous">‹</button><div class="dots" id="dots"></div><button id="cardNext" type="button" aria-label="next">›</button></div>
+</div>
+<div class="dock glass">
+<button class="dbtn" id="btnStep" type="button" data-i18n="stepBtn"></button>
+<button class="dbtn main" id="btnRun" type="button" data-i18n="runBtn"></button>
+<button class="dbtn" id="btnClear" type="button" data-i18n="resetBtn"></button>
+</div>
+<div class="fallback" id="fallback"><div>⚠️ ไม่สามารถโหลดไลบรารี Three.js ได้ กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้านี้<br>Could not load Three.js. Please check your connection and reload.</div></div>
+</section>
+<aside id="panel" class="glass">
+<div class="phead">
+<div class="prow"><span class="tag" data-i18n="tag"></span>
+<div class="lang" role="group" aria-label="Language"><button id="lang-th" type="button" class="active" aria-pressed="true">ไทย</button><button id="lang-en" type="button" aria-pressed="false">English</button></div></div>
+<h1 data-i18n="title"></h1>
+<p class="sub" data-i18n="subtitle"></p>
+</div>
+<div class="tabs" role="tablist">
+<button class="tab active" type="button" data-tab="lab" data-i18n="tabLab"></button>
+<button class="tab" type="button" data-tab="res" data-i18n="tabResult"></button>
+<button class="tab" type="button" data-tab="quiz" data-i18n="tabQuiz"></button>
+</div>
+<div class="pbody">
+<div class="pane active" id="pane-lab">
+<div class="obj"><h2 data-i18n="objectiveTitle"></h2><p data-i18n="objectiveText"></p><div class="formula" data-i18n="formula"></div></div>
+<h2 data-i18n="setupTitle"></h2>
+<p class="muted" data-i18n="setupText"></p>
+<div class="ctl"><label for="red"><span data-i18n="redLabel"></span><span class="pill" id="redVal"></span></label><input id="red" type="range" min="0" max="20" value="3"></div>
+<div class="ctl"><label for="blue"><span data-i18n="blueLabel"></span><span class="pill" id="blueVal"></span></label><input id="blue" type="range" min="0" max="20" value="2"></div>
+<div class="ctl"><label for="green"><span data-i18n="greenLabel"></span><span class="pill" id="greenVal"></span></label><input id="green" type="range" min="0" max="20" value="5"></div>
+<div class="ctl"><label for="draws"><span data-i18n="drawsLabel"></span><span class="pill" id="drawsVal"></span></label><input id="draws" type="range" min="10" max="500" step="10" value="50"></div>
+<div class="note" id="emptyNote" data-i18n="emptyNote"></div>
+<div class="statgrid">
+<div class="stat"><strong id="total">10</strong><span data-i18n="totalLabel"></span></div>
+<div class="stat"><strong id="trials">0</strong><span data-i18n="trialsLabel"></span></div>
+<div class="stat"><strong id="theory">30%</strong><span data-i18n="redChanceLabel"></span></div>
+<div class="stat"><strong id="last">—</strong><span data-i18n="lastLabel"></span></div>
+</div>
+<h2 data-i18n="theoryTitle"></h2>
+<div id="theoryBars"></div>
+<h2 data-i18n="exploreTitle"></h2>
+<p class="muted" data-i18n="exploreText"></p>
+<div class="chips" id="explore"></div>
+</div>
+<div class="pane" id="pane-res">
+<h2 data-i18n="trendTitle"></h2>
+<p class="muted" data-i18n="trendText"></p>
+<canvas id="trend" aria-label="trend chart"></canvas>
+<h2 data-i18n="expTitle"></h2>
+<div id="expBars"></div>
+<div class="note" data-i18n="chartNote"></div>
+</div>
+<div class="pane" id="pane-quiz">
+<h2 data-i18n="quizTitle"></h2>
+<p class="muted" data-i18n="quizText"></p>
+<form id="quiz">
+<div id="qlist"></div>
+<div class="btnrow"><button class="btn teal" type="submit" data-i18n="checkBtn"></button><button class="btn secondary" type="button" id="showAnswers" data-i18n="answersBtn"></button><button class="btn secondary" type="button" id="clearQuiz" data-i18n="clearBtn"></button></div>
+<div id="score" aria-live="polite"></div>
+</form>
+</div>
+</div>
+</aside>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const has3D=typeof THREE!=='undefined'&&typeof THREE.OrbitControls!=='undefined';
+const COLORS=[
+{key:'red',hex:0xef476f,css:'#ef476f',emoji:'🔴'},
+{key:'blue',hex:0x4d8cff,css:'#4d8cff',emoji:'🔵'},
+{key:'green',hex:0x22b39a,css:'#22b39a',emoji:'🟢'}
+];
+const T={
+th:{
+docTitle:'Probability Lab 3D | ห้องทดลองความน่าจะเป็น ม.3',
+tag:'MATH LAB 3D • มัธยมศึกษาปีที่ 3',title:'ห้องทดลองความน่าจะเป็น',subtitle:'สุ่มหยิบลูกบอลในโลก 3 มิติ แล้วเปรียบเทียบค่าทฤษฎีกับผลการทดลอง',
+tabLab:'🧪 ทดลอง',tabResult:'📈 ผลลัพธ์',tabQuiz:'🧠 ทดสอบ',
+objectiveTitle:'🎯 เป้าหมายการเรียนรู้',objectiveText:'วิเคราะห์ความน่าจะเป็นของเหตุการณ์ คำนวณความน่าจะเป็นทางทฤษฎี และอธิบายความแตกต่างระหว่างค่าทฤษฎีกับผลการทดลองได้',
+formula:'P(A) = จำนวนผลลัพธ์ที่สนใจ ÷ จำนวนผลลัพธ์ทั้งหมด',
+setupTitle:'⚙️ ตั้งค่าการทดลอง',setupText:'หยิบลูกบอล 1 ลูกจากถุงโดยไม่มอง แล้วใส่คืนทุกครั้ง เลื่อนแถบเพื่อเพิ่มหรือลดลูกบอลในถุง 3 มิติ',
+redLabel:'🔴 ลูกบอลสีแดง',blueLabel:'🔵 ลูกบอลสีฟ้า',greenLabel:'🟢 ลูกบอลสีเขียว',drawsLabel:'จำนวนครั้งที่ทดลอง',
+emptyNote:'💡 ถ้าจำนวนลูกบอลรวมเป็น 0 จะยังทดลองสุ่มไม่ได้ กรุณาเพิ่มลูกบอลอย่างน้อย 1 ลูก',
+totalLabel:'ลูกบอลทั้งหมด',trialsLabel:'ทดลองแล้ว (ครั้ง)',redChanceLabel:'โอกาสได้สีแดง',lastLabel:'ผลสุ่มล่าสุด',
+theoryTitle:'ความน่าจะเป็นทางทฤษฎี',exploreTitle:'📍 จุดเรียนรู้ 3 มิติ',exploreText:'แตะจุดเรืองแสงในฉาก หรือเลือกจากรายการนี้เพื่อดูคำอธิบาย',
+trendTitle:'📈 แนวโน้มของผลการทดลอง',trendText:'เส้นทึบคือเปอร์เซ็นต์สะสมที่ได้จริง เส้นประคือค่าทฤษฎี',
+expTitle:'📊 เปรียบเทียบผลการทดลองแบบเรียลไทม์',chartNote:'สังเกต: เมื่อทดลองหลายครั้ง ผลการทดลองมักมีแนวโน้มเข้าใกล้ค่าทฤษฎี แต่ไม่จำเป็นต้องเท่ากันทุกครั้ง (เส้นสีดำบนแถบคือค่าทฤษฎี)',
+quizTitle:'🧠 คำถามท้ายกิจกรรม',quizText:'ตอบทั้ง 3 ข้อ แล้วกดตรวจคำตอบเพื่อดูคะแนนและเฉลย',
+checkBtn:'ตรวจคำตอบ',answersBtn:'แสดงเฉลย',clearBtn:'ล้างคำตอบ',
+runBtn:'▶ สุ่มทดลอง',stepBtn:'สุ่ม 1 ครั้ง',resetBtn:'↻ เริ่มใหม่',
+hint:'ลากเพื่อหมุน • เลื่อนล้อเมาส์เพื่อซูม • คลิกขวาลากเพื่อแพน • แตะจุดเรืองแสง',
+tipReset:'รีเซ็ตมุมมอง',tipRotate:'หมุนอัตโนมัติ',legendTheory:'ค่าทฤษฎี (โปร่ง)',legendExp:'ผลทดลอง (ทึบ)',
+colors:['สีแดง','สีฟ้า','สีเขียว'],ball:'ลูก',times:'ครั้ง',
+alert:'กรุณาเพิ่มลูกบอลอย่างน้อย 1 ลูกก่อนทดลอง',theory:'ค่าทฤษฎี',actual:'จริง',
+score:'คะแนนของคุณ ',correct:'ถูกต้อง! ',incorrect:'ยังไม่ถูก ',doneRun:'ทดลองครบ ',
+noBalls:'เพิ่มลูกบอลในถุงก่อน แล้วลองอีกครั้ง',noData:'ยังไม่มีข้อมูล — กด “สุ่มทดลอง”',everyTime:'ทุกครั้งที่หยิบ ค่านี้ไม่เปลี่ยน',trialsOf:'ทดลองแล้ว',
+cardKicker:'จุดเรียนรู้',liveLabel:'ตัวอย่างจากค่าปัจจุบัน',ballTitle:'ลูกบอล —',
+ballBody:'ลูกนี้เป็น 1 ใน n(S) ผลลัพธ์ที่มีโอกาสถูกหยิบเท่ากัน ยิ่งมีลูกสีเดียวกันมาก โอกาสได้สีนั้นก็ยิ่งสูง',
+q:['ข้อ 1: ในถุงมีลูกบอลสีแดง 3 ลูก สีฟ้า 2 ลูก และสีเขียว 5 ลูก ความน่าจะเป็นที่จะหยิบได้สีฟ้าเท่ากับเท่าใด','ข้อ 2: ถุงมีลูกบอลสีแดง 4 ลูก และสีฟ้า 4 ลูก ข้อใดถูกต้อง','ข้อ 3: ทดลองสุ่ม 10 ครั้ง ได้สีแดง 8 ครั้ง ข้อสรุปใดเหมาะสมที่สุด'],
+qa:[['2/5','1/5','1/2'],['โอกาสได้สีแดงมากกว่าสีฟ้า','โอกาสได้สีแดงน้อยกว่าสีฟ้า','โอกาสได้สีแดงและสีฟ้าเท่ากัน'],['ความน่าจะเป็นทางทฤษฎีของสีแดงต้องเท่ากับ 80% เสมอ','ผลการทดลองอาจต่างจากค่าทฤษฎีได้ โดยเฉพาะเมื่อทดลองไม่มากครั้ง','การทดลองผิดแน่นอน เพราะผลต้องเท่ากับค่าทฤษฎี']],
+explanations:['เฉลย: 2/10 = 1/5 เพราะมีลูกบอลสีฟ้า 2 ลูก จากทั้งหมด 10 ลูก','เฉลย: มีจำนวนเท่ากัน จึงมีความน่าจะเป็นเท่ากัน คือ 4/8 = 1/2','เฉลย: ผลการทดลองอาจแตกต่างจากค่าทฤษฎีได้ โดยเฉพาะเมื่อจำนวนครั้งที่ทดลองยังน้อย'],
+hs:{
+bag:{t:'ถุงสุ่ม = ผลลัพธ์ทั้งหมด',b:'ลูกบอลทุกลูกในถุงคือผลลัพธ์ที่เป็นไปได้ทั้งหมด เรียกว่าปริภูมิตัวอย่าง (S) เขียนแทนจำนวนด้วย n(S) และทุกลูกมีโอกาสถูกหยิบเท่ากัน'},
+event:{t:'เหตุการณ์ที่สนใจ (A)',b:'เหตุการณ์คือผลลัพธ์ที่เราสนใจ เช่น “หยิบได้สีแดง” จำนวนลูกบอลสีแดงคือ n(A) แล้วนำไปหารด้วย n(S)'},
+pick:{t:'หยิบแล้วใส่คืน',b:'หยิบ 1 ลูกโดยไม่มองแล้วใส่คืนทุกครั้ง ทำให้จำนวนลูกบอลในถุงเท่าเดิม ความน่าจะเป็นในแต่ละครั้งจึงไม่เปลี่ยนแปลง'},
+theory:{t:'ค่าทฤษฎี (แท่งโปร่ง)',b:'ความน่าจะเป็นทางทฤษฎีคำนวณจาก P(A) = n(A) ÷ n(S) โดยไม่ต้องทดลองจริง ความสูงของแท่งโปร่งคือค่านี้'},
+exp:{t:'ผลการทดลอง (แท่งทึบ)',b:'แท่งทึบคือเปอร์เซ็นต์ที่ได้จริงจากการสุ่ม = จำนวนครั้งที่ได้สีนั้น ÷ จำนวนครั้งที่ทดลอง ลองกดสุ่มแล้วดูแท่งเปลี่ยนไป'},
+lln:{t:'กฎของจำนวนมาก',b:'เมื่อทดลองหลายครั้งขึ้น ผลการทดลองมักเข้าใกล้ค่าทฤษฎี แต่ไม่จำเป็นต้องเท่ากันทุกครั้ง ลองเพิ่มเป็น 500 ครั้งแล้วเปรียบเทียบ'},
+sum:{t:'ผลรวมความน่าจะเป็น = 1',b:'ความน่าจะเป็นของทุกสีรวมกันได้ 1 (หรือ 100%) เสมอ เพราะต้องหยิบได้สีใดสีหนึ่งแน่นอน'}
+}
+},
+en:{
+docTitle:'Probability Lab 3D | Grade 9 Mathematics',
+tag:'MATH LAB 3D • GRADE 9',title:'Probability Lab',subtitle:'Draw balls in a 3D world and compare theoretical probability with experimental results.',
+tabLab:'🧪 Experiment',tabResult:'📈 Results',tabQuiz:'🧠 Quiz',
+objectiveTitle:'🎯 Learning Objective',objectiveText:'Analyze the probability of events, calculate theoretical probability, and explain the difference between theoretical and experimental results.',
+formula:'P(A) = favorable outcomes ÷ total outcomes',
+setupTitle:'⚙️ Set Up the Experiment',setupText:'Draw one ball from the bag without looking, then replace it after every draw. Move the sliders to change the balls in the 3D bag.',
+redLabel:'🔴 Red balls',blueLabel:'🔵 Blue balls',greenLabel:'🟢 Green balls',drawsLabel:'Number of trials',
+emptyNote:'💡 You cannot draw from an empty bag. Add at least one ball to begin.',
+totalLabel:'Total balls',trialsLabel:'Trials so far',redChanceLabel:'Chance of red',lastLabel:'Latest draw',
+theoryTitle:'Theoretical Probability',exploreTitle:'📍 3D Learning Points',exploreText:'Tap a glowing dot in the scene, or pick from this list to read the explanation.',
+trendTitle:'📈 Experimental Trend',trendText:'Solid lines show the cumulative observed percentage. Dashed lines show theoretical values.',
+expTitle:'📊 Compare Results in Real Time',chartNote:'Notice: as the number of trials grows, experimental results tend to approach theoretical probabilities, but may not match exactly (the black mark on each bar is the theoretical value).',
+quizTitle:'🧠 Check Your Understanding',quizText:'Answer all three questions, then check your answers to see your score and explanations.',
+checkBtn:'Check answers',answersBtn:'Show answers',clearBtn:'Clear answers',
+runBtn:'▶ Run experiment',stepBtn:'Draw once',resetBtn:'↻ Reset',
+hint:'Drag to rotate • Scroll to zoom • Right-drag to pan • Tap the glowing dots',
+tipReset:'Reset view',tipRotate:'Auto-rotate',legendTheory:'Theoretical (clear)',legendExp:'Experimental (solid)',
+colors:['Red','Blue','Green'],ball:'balls',times:'trials',
+alert:'Please add at least one ball before running the experiment.',theory:'Theoretical',actual:'Actual',
+score:'Your score: ',correct:'Correct! ',incorrect:'Not quite. ',doneRun:'Completed ',
+noBalls:'Add some balls to the bag first, then try again.',noData:'No data yet — press “Run experiment”',everyTime:'This value stays the same on every draw',trialsOf:'Trials so far:',
+cardKicker:'Learning point',liveLabel:'Example with current values',ballTitle:'Ball —',
+ballBody:'This ball is 1 of n(S) equally likely outcomes. The more balls of one color, the higher the chance of drawing that color.',
+q:['Q1: A bag contains 3 red, 2 blue, and 5 green balls. What is the probability of drawing a blue ball?','Q2: A bag contains 4 red balls and 4 blue balls. Which statement is correct?','Q3: In 10 trials, a red ball is drawn 8 times. Which conclusion is best?'],
+qa:[['2/5','1/5','1/2'],['Red is more likely than blue.','Red is less likely than blue.','Red and blue are equally likely.'],['The theoretical probability of red must always be 80%.','Experimental results can differ from theoretical probability, especially with few trials.','The experiment is definitely wrong because results must equal theory.']],
+explanations:['Answer: 2/10 = 1/5, because 2 of the 10 balls are blue.','Answer: They are equally likely: 4/8 = 1/2 for each color.','Answer: Experimental results can differ from theoretical probability, especially when there are few trials.'],
+hs:{
+bag:{t:'The bag = all outcomes',b:'Every ball in the bag is a possible outcome. Together they form the sample space (S), with n(S) balls, and each ball is equally likely to be drawn.'},
+event:{t:'The event of interest (A)',b:'An event is the outcome we care about, such as “draw a red ball”. The number of red balls is n(A), which we divide by n(S).'},
+pick:{t:'Draw with replacement',b:'We draw one ball without looking and put it back every time, so the bag never changes and the probability stays the same on each draw.'},
+theory:{t:'Theoretical value (clear bar)',b:'Theoretical probability comes from P(A) = n(A) ÷ n(S) with no experiment needed. The height of the clear bar shows this value.'},
+exp:{t:'Experimental result (solid bar)',b:'The solid bar is the percentage actually observed = times the color appeared ÷ total trials. Run the experiment and watch it change.'},
+lln:{t:'Law of Large Numbers',b:'With more trials, results tend to approach the theoretical value, though they need not match exactly. Try 500 trials and compare.'},
+sum:{t:'Probabilities add up to 1',b:'The probabilities of all colors always add up to 1 (or 100%) because some color must be drawn.'}
+}
+}
+};
+const QZ=[{n:'q1',c:'b'},{n:'q2',c:'c'},{n:'q3',c:'b'}];
+const JAR_X=-3,R=1.55,H=3.1,BR=0.3,CH_X=2.7,SP=1.75,MAXH=3.2;
+let lang='th';
+let counts={red:3,blue:2,green:5};
+let results={red:0,blue:0,green:0};
+let totalDraws=0;
+let lastInfo=null;
+const hist={red:[],blue:[],green:[]};
+let runState=null;
+let ready3d=false;
+let curCard=null;
+let curBall=null;
+let toastTimer=null;
+let renderer,scene,camera,controls,jarGroup,sNs,pickLight,burstPoints,dust;
+let pick=null,tween=null;
+const bars=[];
+const balls=[];
+const stage=$('stage');
+const pPos=new Float32Array(60*3);
+const pVel=new Float32Array(60*3);
+let pLife=0;
+let wasPortrait=null;
+
+function t(k){return T[lang][k]}
+function sum(o){return o.red+o.blue+o.green}
+function pct(n,d){return d?n/d*100:0}
+function fmt(n){return n.toLocaleString(lang==='th'?'th-TH':'en-US',{maximumFractionDigits:1})+'%'}
+function gcd(a,b){return b?gcd(b,a%b):a}
+function frac(n,d){if(!n)return '0/'+d;const g=gcd(n,d);return g>1?n+'/'+d+' = '+(n/g)+'/'+(d/g):n+'/'+d}
+function colorName(i){return t('colors')[i]}
+function lastStr(){
+if(!lastInfo)return '—';
+if(lastInfo.type==='draw'){const i=COLORS.findIndex(c=>c.key===lastInfo.key);return COLORS[i].emoji+' '+colorName(i)}
+return t('doneRun')+lastInfo.n+' '+t('times');
+}
+
+function makeLabel(w,h,fs){
+const cv=document.createElement('canvas');
+cv.width=w*2;cv.height=h*2;
+const tex=new THREE.CanvasTexture(cv);
+tex.minFilter=THREE.LinearFilter;
+const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));
+sp.scale.set(w/100,h/100,1);
+sp.renderOrder=10;
+sp.userData={cv:cv,tex:tex,fs:fs,last:null};
+return sp;
+}
+function roundRect(g,x,y,w,h,r){
+g.beginPath();
+g.moveTo(x+r,y);g.lineTo(x+w-r,y);g.quadraticCurveTo(x+w,y,x+w,y+r);
+g.lineTo(x+w,y+h-r);g.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+g.lineTo(x+r,y+h);g.quadraticCurveTo(x,y+h,x,y+h-r);
+g.lineTo(x,y+r);g.quadraticCurveTo(x,y,x+r,y);
+g.closePath();
+}
+function setLabel(sp,text,o){
+const d=sp.userData;
+const key=text+'|'+(o?o.fg+o.bg:'');
+if(d.last===key)return;
+d.last=key;
+const g=d.cv.getContext('2d');
+g.clearRect(0,0,d.cv.width,d.cv.height);
+if(text){
+g.font='600 '+(d.fs*2)+'px Prompt,"Noto Sans Thai",Tahoma,sans-serif';
+g.textAlign='center';g.textBaseline='middle';
+const tw=Math.min(d.cv.width-6,g.measureText(text).width+d.fs*1.6);
+const th=d.cv.height-8;
+g.fillStyle=o.bg;
+roundRect(g,(d.cv.width-tw)/2,4,tw,th,th/2);
+g.fill();
+g.fillStyle=o.fg;
+g.fillText(text,d.cv.width/2,d.cv.height/2+2);
+}
+d.tex.needsUpdate=true;
+}
+
+function fitFactor(){
+const a=stage.clientWidth/Math.max(1,stage.clientHeight);
+return Math.max(1,1.4/a);
+}
+const VIEWS={
+home:{t:[0,2.2,0],o:[1.2,2.9,12.2]},
+bag:{t:[-3,1.6,0],o:[0.8,1.6,6.2]},
+event:{t:[-3,1.6,0],o:[0.8,1.6,6.2]},
+pick:{t:[-3,3.4,0],o:[0.8,1.4,7.4]},
+theory:{t:[2.7,1.8,0],o:[0,1.6,7.8]},
+exp:{t:[2.7,1.8,0],o:[0,1.6,7.8]},
+lln:{t:[2.7,2,0],o:[-0.6,1.8,9]},
+sum:{t:[0,2.2,0],o:[1.2,2.9,12.2]}
+};
+function flyTo(name,instant){
+if(!ready3d)return;
+const v=VIEWS[name]||VIEWS.home;
+const f=fitFactor();
+const p1=new THREE.Vector3(v.t[0]+v.o[0]*f,v.t[1]+v.o[1]*f,v.t[2]+v.o[2]*f);
+const q1=new THREE.Vector3(v.t[0],v.t[1],v.t[2]);
+if(instant){camera.position.copy(p1);controls.target.copy(q1);controls.update();tween=null;return}
+tween={t0:performance.now(),dur:950,p0:camera.position.clone(),q0:controls.target.clone(),p1:p1,q1:q1};
+}
+
+function build3D(){
+renderer=new THREE.WebGLRenderer({canvas:$('gl'),antialias:true,alpha:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+scene=new THREE.Scene();
+camera=new THREE.PerspectiveCamera(40,1,0.1,100);
+controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;
+controls.dampingFactor=0.07;
+controls.enablePan=true;
+controls.screenSpacePanning=true;
+controls.minDistance=4;
+controls.maxDistance=32;
+controls.maxPolarAngle=Math.PI*0.495;
+controls.autoRotateSpeed=1.1;
+controls.addEventListener('start',()=>{tween=null;$('hint').classList.add('hide')});
+
+scene.add(new THREE.HemisphereLight(0xffffff,0xb9b4ff,0.6));
+const sun=new THREE.DirectionalLight(0xffffff,0.75);
+sun.position.set(6,11,7);
+sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-9;sun.shadow.camera.right=9;sun.shadow.camera.top=9;sun.shadow.camera.bottom=-9;
+sun.shadow.camera.near=1;sun.shadow.camera.far=40;
+sun.shadow.bias=-0.0006;
+sun.shadow.radius=4;
+scene.add(sun);
+const rim=new THREE.DirectionalLight(0xbfb2ff,0.35);
+rim.position.set(-8,5,-6);
+scene.add(rim);
+const fill=new THREE.PointLight(0x9ff0e0,0.35,30);
+fill.position.set(-2,4,6);
+scene.add(fill);
+
+const base=new THREE.Mesh(new THREE.BoxGeometry(12.4,0.5,6.4),new THREE.MeshStandardMaterial({color:0xf5f3ff,roughness:0.45,metalness:0.05}));
+base.position.y=-0.25;
+base.receiveShadow=true;
+scene.add(base);
+const base2=new THREE.Mesh(new THREE.BoxGeometry(13.2,0.3,7.2),new THREE.MeshStandardMaterial({color:0xd9d6f7,roughness:0.6}));
+base2.position.y=-0.65;
+base2.receiveShadow=true;
+scene.add(base2);
+const divider=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.02,5.6),new THREE.MeshBasicMaterial({color:0xcfc9f5}));
+divider.position.set(-0.9,0.01,0);
+scene.add(divider);
+
+jarGroup=new THREE.Group();
+jarGroup.position.set(JAR_X,0,0);
+scene.add(jarGroup);
+const ring=new THREE.Mesh(new THREE.RingGeometry(R+0.25,R+0.4,64),new THREE.MeshBasicMaterial({color:0x6f5bd8,transparent:true,opacity:0.45,side:THREE.DoubleSide}));
+ring.rotation.x=-Math.PI/2;
+ring.position.y=0.01;
+jarGroup.add(ring);
+const glassMat=new THREE.MeshPhysicalMaterial({color:0xdfe8ff,transparent:true,opacity:0.2,roughness:0.05,metalness:0,clearcoat:1,clearcoatRoughness:0.05,side:THREE.DoubleSide,depthWrite:false});
+const jar=new THREE.Mesh(new THREE.CylinderGeometry(R+0.06,R+0.06,H,64,1,true),glassMat);
+jar.position.y=H/2;
+jar.renderOrder=2;
+jarGroup.add(jar);
+const jarBottom=new THREE.Mesh(new THREE.CylinderGeometry(R+0.06,R+0.06,0.08,64),new THREE.MeshStandardMaterial({color:0xeef1ff,roughness:0.25,metalness:0.1}));
+jarBottom.position.y=0.04;
+jarBottom.receiveShadow=true;
+jarGroup.add(jarBottom);
+const rimMesh=new THREE.Mesh(new THREE.TorusGeometry(R+0.06,0.05,16,64),new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.2,metalness:0.2}));
+rimMesh.rotation.x=Math.PI/2;
+rimMesh.position.y=H;
+jarGroup.add(rimMesh);
+const shine=new THREE.Mesh(new THREE.PlaneGeometry(0.16,H*0.7),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.35,depthWrite:false}));
+shine.position.set(Math.sin(0.9)*(R+0.07),H*0.5,Math.cos(0.9)*(R+0.07));
+shine.rotation.y=0.9;
+shine.renderOrder=3;
+jarGroup.add(shine);
+sNs=makeLabel(120,32,15);
+sNs.position.set(0,H+0.6,0);
+jarGroup.add(sNs);
+pickLight=new THREE.PointLight(0xffffff,0,7,2);
+pickLight.position.set(0,H+1.7,0);
+jarGroup.add(pickLight);
+
+const chart=new THREE.Group();
+chart.position.set(CH_X,0,0);
+scene.add(chart);
+const wall=new THREE.Mesh(new THREE.PlaneGeometry(6.4,MAXH+0.4),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.45,depthWrite:false}));
+wall.position.set(0,(MAXH+0.4)/2,-1);
+chart.add(wall);
+for(let p=0;p<=100;p+=25){
+const y=MAXH*p/100;
+const pts=[new THREE.Vector3(-3.2,y,-0.98),new THREE.Vector3(3.2,y,-0.98)];
+const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x9aa3d6,transparent:true,opacity:0.55}));
+chart.add(ln);
+const lb=makeLabel(56,24,13);
+lb.position.set(-3.55,y,-0.9);
+setLabel(lb,p+'%',{fg:'#667092',bg:'#ffffffcc'});
+chart.add(lb);
+}
+const boxGeo=new THREE.BoxGeometry(0.5,1,0.5);
+const edgeGeo=new THREE.EdgesGeometry(boxGeo);
+COLORS.forEach((c,i)=>{
+const gx=(i-1)*SP;
+const tm=new THREE.Mesh(boxGeo,new THREE.MeshPhysicalMaterial({color:c.hex,transparent:true,opacity:0.36,roughness:0.2,clearcoat:1,depthWrite:false}));
+tm.position.set(gx-0.36,0.0005,0);
+tm.add(new THREE.LineSegments(edgeGeo,new THREE.LineBasicMaterial({color:c.hex})));
+tm.renderOrder=2;
+chart.add(tm);
+const em=new THREE.Mesh(boxGeo,new THREE.MeshPhysicalMaterial({color:c.hex,roughness:0.3,clearcoat:0.8}));
+em.position.set(gx+0.36,0.0005,0);
+em.castShadow=true;
+em.receiveShadow=true;
+chart.add(em);
+const lt=makeLabel(72,28,13);
+const le=makeLabel(72,28,13);
+const cl=makeLabel(110,30,15);
+cl.position.set(gx,0.02,0.85);
+chart.add(lt);chart.add(le);chart.add(cl);
+bars.push({tm:tm,em:em,lt:lt,le:le,cl:cl,gx:gx,th:0,eh:0,tt:0,et:0});
+});
+
+const ballGeoInit=new THREE.SphereGeometry(BR,32,24);
+scene.userData.ballGeo=ballGeoInit;
+
+const pGeo=new THREE.BufferGeometry();
+pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+burstPoints=new THREE.Points(pGeo,new THREE.PointsMaterial({size:0.16,color:0xffffff,transparent:true,opacity:0,depthWrite:false}));
+burstPoints.frustumCulled=false;
+jarGroup.add(burstPoints);
+
+const dn=70;
+const dp=new Float32Array(dn*3);
+for(let i=0;i<dn;i++){dp[i*3]=(Math.random()-0.5)*22;dp[i*3+1]=Math.random()*8;dp[i*3+2]=(Math.random()-0.5)*10-1}
+const dGeo=new THREE.BufferGeometry();
+dGeo.setAttribute('position',new THREE.BufferAttribute(dp,3));
+dust=new THREE.Points(dGeo,new THREE.PointsMaterial({color:0x8f7cf0,size:0.07,transparent:true,opacity:0.45,depthWrite:false}));
+scene.add(dust);
+
+ready3d=true;
+resize();
+flyTo('home',true);
+}
+
+function makeBall(c,k){
+const mat=new THREE.MeshPhysicalMaterial({color:c.hex,roughness:0.28,metalness:0.05,clearcoat:1,clearcoatRoughness:0.12,emissive:c.hex,emissiveIntensity:0});
+const mesh=new THREE.Mesh(scene.userData.ballGeo,mat);
+mesh.castShadow=true;
+mesh.receiveShadow=true;
+const a=Math.random()*Math.PI*2;
+const rr=Math.random()*(R-BR-0.25);
+const b={mesh:mesh,mat:mat,color:c.key,pos:new THREE.Vector3(Math.cos(a)*rr,H+0.7+(k%12)*0.5+Math.random()*0.3,Math.sin(a)*rr),vel:new THREE.Vector3(0,0,0),state:'free',s:0.01,flash:0};
+mesh.scale.setScalar(0.01);
+mesh.position.copy(b.pos);
+jarGroup.add(mesh);
+return b;
+}
+function syncBalls(){
+if(!ready3d)return;
+let k=0;
+COLORS.forEach(c=>{
+const alive=balls.filter(b=>b.color===c.key&&b.state!=='dying');
+const diff=counts[c.key]-alive.length;
+if(diff>0){for(let i=0;i<diff;i++){balls.push(makeBall(c,k++))}}
+else if(diff<0){
+const cand=alive.filter(b=>b.state!=='picking');
+for(let i=0;i<-diff&&cand.length;i++){cand.pop().state='dying'}
+}
+});
+}
+function stepPhysics(dt){
+const n=balls.length;
+const floorY=BR+0.08;
+const lim=R-BR;
+for(let i=0;i<n;i++){
+const b=balls[i];
+if(b.state==='picking'||b.state==='dying')continue;
+b.vel.y-=22*dt;
+if(b.vel.lengthSq()<1.44)b.vel.multiplyScalar(0.9);
+b.pos.addScaledVector(b.vel,dt);
+}
+for(let it=0;it<2;it++){
+for(let i=0;i<n;i++){
+const a=balls[i];
+if(a.state==='picking'||a.state==='dying')continue;
+for(let j=i+1;j<n;j++){
+const c=balls[j];
+if(c.state==='picking'||c.state==='dying')continue;
+const dx=c.pos.x-a.pos.x,dy=c.pos.y-a.pos.y,dz=c.pos.z-a.pos.z;
+const d2=dx*dx+dy*dy+dz*dz;
+if(d2>=4*BR*BR)continue;
+const d=Math.sqrt(d2)||0.0001;
+const nx=dx/d,ny=dy/d,nz=dz/d;
+const ov=(2*BR-d)*0.5;
+a.pos.x-=nx*ov;a.pos.y-=ny*ov;a.pos.z-=nz*ov;
+c.pos.x+=nx*ov;c.pos.y+=ny*ov;c.pos.z+=nz*ov;
+const rv=(c.vel.x-a.vel.x)*nx+(c.vel.y-a.vel.y)*ny+(c.vel.z-a.vel.z)*nz;
+if(rv<0){
+const imp=-(1.12)*rv*0.5;
+a.vel.x-=nx*imp;a.vel.y-=ny*imp;a.vel.z-=nz*imp;
+c.vel.x+=nx*imp;c.vel.y+=ny*imp;c.vel.z+=nz*imp;
+}
+}
+}
+for(let i=0;i<n;i++){
+const b=balls[i];
+if(b.state==='picking'||b.state==='dying')continue;
+if(b.pos.y<floorY){
+b.pos.y=floorY;
+if(b.vel.y<0)b.vel.y*=-0.2;
+b.vel.x*=0.92;b.vel.z*=0.92;
+}
+if(b.pos.y<H+0.2){
+const rr=Math.sqrt(b.pos.x*b.pos.x+b.pos.z*b.pos.z);
+if(rr>lim){
+const nx=b.pos.x/rr,nz=b.pos.z/rr;
+b.pos.x=nx*lim;b.pos.z=nz*lim;
+const vr=b.vel.x*nx+b.vel.z*nz;
+if(vr>0){b.vel.x-=1.3*vr*nx;b.vel.z-=1.3*vr*nz}
+}
+}
+}
+}
+}
+function updateBalls(dt){
+for(let i=balls.length-1;i>=0;i--){
+const b=balls[i];
+if(b.state==='dying'){
+b.s-=dt*4;
+if(b.s<=0){jarGroup.remove(b.mesh);b.mat.dispose();balls.splice(i,1);continue}
+}else if(b.state==='free'&&b.s<1){
+b.s=Math.min(1,b.s+dt*4);
+}
+if(b.flash>0){
+b.flash-=dt*1.4;
+if(b.state!=='picking')b.mat.emissiveIntensity=Math.max(0,b.flash)*0.6;
+}
+b.mesh.position.copy(b.pos);
+b.mesh.scale.setScalar(Math.max(0.001,b.s));
+}
+}
+function burst(v,hex,power){
+for(let i=0;i<60;i++){
+pPos[i*3]=v.x;pPos[i*3+1]=v.y;pPos[i*3+2]=v.z;
+const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
+const sp=(1.2+Math.random()*2.2)*(power||1);
+pVel[i*3]=Math.sin(ph)*Math.cos(th)*sp;
+pVel[i*3+1]=Math.cos(ph)*sp;
+pVel[i*3+2]=Math.sin(ph)*Math.sin(th)*sp;
+}
+burstPoints.material.color.setHex(hex);
+pLife=1;
+burstPoints.geometry.attributes.position.needsUpdate=true;
+}
+function updateBurst(dt){
+if(pLife<=0)return;
+pLife-=dt*1.1;
+for(let i=0;i<60;i++){
+pPos[i*3]+=pVel[i*3]*dt;
+pPos[i*3+1]+=pVel[i*3+1]*dt;
+pPos[i*3+2]+=pVel[i*3+2]*dt;
+pVel[i*3]*=0.96;pVel[i*3+1]=pVel[i*3+1]*0.96-2*dt;pVel[i*3+2]*=0.96;
+}
+burstPoints.material.opacity=Math.max(0,pLife);
+burstPoints.geometry.attributes.position.needsUpdate=true;
+}
+function startPick(key){
+if(!ready3d||pick)return false;
+const cand=balls.filter(b=>b.color===key&&b.state==='free'&&b.s>=1);
+if(!cand.length)return false;
+const b=cand[Math.floor(Math.random()*cand.length)];
+b.state='picking';
+const c=COLORS.find(x=>x.key===key);
+pickLight.color.setHex(c.hex);
+pick={b:b,c:c,phase:0,t:0,from:b.pos.clone()};
+return true;
+}
+function updatePick(dt){
+if(!pick)return;
+const b=pick.b;
+const hover=new THREE.Vector3(0,H+1.7,0);
+pick.t+=dt;
+if(pick.phase===0){
+const k=Math.min(1,pick.t/0.6);
+const e=1-Math.pow(1-k,3);
+b.pos.lerpVectors(pick.from,hover,e);
+b.s=1+0.5*e;
+b.mat.emissiveIntensity=0.55*e;
+pickLight.intensity=1.6*e;
+if(k>=1){pick.phase=1;pick.t=0;burst(hover,pick.c.hex,1)}
+}else if(pick.phase===1){
+b.pos.copy(hover);
+b.pos.y+=Math.sin(pick.t*6)*0.07;
+b.mesh.rotation.y+=dt*3;
+if(pick.t>=0.55){pick.phase=2;pick.t=0}
+}else{
+const k=Math.min(1,pick.t/0.35);
+b.pos.copy(hover);
+b.s=1.5-0.5*k;
+b.mat.emissiveIntensity=0.55*(1-k);
+pickLight.intensity=1.6*(1-k);
+if(k>=1){
+b.state='free';
+b.s=1;
+b.vel.set(0,-2,0);
+b.mat.emissiveIntensity=0;
+b.flash=0;
+pickLight.intensity=0;
+pick=null;
+}
+}
+}
+function setTargets(){
+if(!ready3d)return;
+const total=sum(counts);
+bars.forEach((b,i)=>{
+const c=COLORS[i];
+b.tt=pct(counts[c.key],total)/100*MAXH;
+b.et=pct(results[c.key],totalDraws)/100*MAXH;
+setLabel(b.lt,total?fmt(pct(counts[c.key],total)):'',{fg:'#ffffff',bg:c.css});
+setLabel(b.le,totalDraws?fmt(pct(results[c.key],totalDraws)):'',{fg:c.css,bg:'#ffffffee'});
+setLabel(b.cl,colorName(i),{fg:c.css,bg:'#ffffffe6'});
+});
+setLabel(sNs,'n(S) = '+total,{fg:'#ffffff',bg:'#6f5bd8'});
+}
+function setBar(m,h){
+m.scale.y=Math.max(0.001,h);
+m.position.y=Math.max(0.0005,h/2);
+}
+function updateBars(dt){
+const k=1-Math.exp(-dt*7);
+bars.forEach(b=>{
+b.th+=(b.tt-b.th)*k;
+b.eh+=(b.et-b.eh)*k;
+setBar(b.tm,b.th);
+setBar(b.em,b.eh);
+b.lt.position.set(b.gx-0.36,b.th+0.3,0.1);
+b.le.position.set(b.gx+0.36,b.eh+0.3,0.1);
+});
+}
+
+const HS=[
+{id:'bag',icon:'👜',anchor:()=>new THREE.Vector3(JAR_X,1.95,R+0.1),view:'bag'},
+{id:'event',icon:'🎯',anchor:()=>new THREE.Vector3(JAR_X+0.95,0.8,R*0.9),view:'event'},
+{id:'pick',icon:'✋',anchor:()=>new THREE.Vector3(JAR_X,H+2.55,0),view:'pick'},
+{id:'theory',icon:'📐',anchor:()=>new THREE.Vector3(CH_X-SP-0.36,bars[0].th+0.9,0),view:'theory'},
+{id:'exp',icon:'🧪',anchor:()=>new THREE.Vector3(CH_X+SP+0.36,bars[2].eh+0.9,0),view:'exp'},
+{id:'lln',icon:'📈',anchor:()=>new THREE.Vector3(CH_X,MAXH+0.7,-1),view:'lln'},
+{id:'sum',icon:'∑',anchor:()=>new THREE.Vector3(0.2,0.3,2.55),view:'sum'}
+];
+const hsEls=[];
+function buildHotspots(){
+const box=$('hotspots');
+HS.forEach((h,i)=>{
+const el=document.createElement('button');
+el.type='button';
+el.className='hotspot hidden';
+el.innerHTML=(i+1)+'<span class="tip"></span>';
+el.addEventListener('click',e=>{e.stopPropagation();openCard(h.id)});
+box.appendChild(el);
+hsEls.push(el);
+});
+const dots=$('dots');
+HS.forEach((h,i)=>{
+const d=document.createElement('i');
+d.addEventListener('click',()=>openCard(h.id));
+dots.appendChild(d);
+});
+}
+function placeHotspots(){
+const w=stage.clientWidth,h=stage.clientHeight;
+HS.forEach((hs,i)=>{
+const v=hs.anchor().project(camera);
+const el=hsEls[i];
+const vis=v.z>-1&&v.z<1&&Math.abs(v.x)<1.05&&Math.abs(v.y)<1.05;
+const x=(v.x*0.5+0.5)*w,y=(-v.y*0.5+0.5)*h;
+el.style.transform='translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px)';
+el.classList.toggle('hidden',!vis);
+el.classList.toggle('flip',x>w-190);
+});
+}
+function liveText(id){
+const total=sum(counts);
+if(!total)return t('noBalls');
+const r=counts.red,b=counts.blue,g=counts.green;
+switch(id){
+case 'bag':return 'n(S) = '+total+' '+t('ball')+'<br>('+r+' + '+b+' + '+g+')';
+case 'event':return 'n(A) = '+r+', n(S) = '+total+'<br>P('+colorName(0)+') = '+frac(r,total)+' = '+fmt(pct(r,total));
+case 'pick':return 'P('+colorName(0)+') = '+frac(r,total)+'<br>'+t('everyTime');
+case 'theory':return 'P('+colorName(0)+') = '+r+'/'+total+' = '+fmt(pct(r,total));
+case 'exp':
+if(!totalDraws)return t('noData');
+return colorName(2)+': '+results.green+'/'+totalDraws+' = '+fmt(pct(results.green,totalDraws))+'<br>'+t('theory')+': '+fmt(pct(g,total));
+case 'lln':
+if(!totalDraws)return t('noData');
+return t('trialsOf')+' '+totalDraws+' '+t('times')+'<br>'+colorName(0)+': |'+fmt(pct(results.red,totalDraws))+' − '+fmt(pct(r,total))+'| = '+fmt(Math.abs(pct(results.red,totalDraws)-pct(r,total)));
+case 'sum':return r+'/'+total+' + '+b+'/'+total+' + '+g+'/'+total+' = '+total+'/'+total+' = 1';
+case 'ball':{
+const i=COLORS.findIndex(c=>c.key===curBall);
+return 'P('+colorName(i)+') = '+frac(counts[curBall],total)+' = '+fmt(pct(counts[curBall],total));
+}
+}
+return '';
+}
+function openCard(id,ballKey){
+curCard=id;
+let icon,title,body,kicker=t('cardKicker');
+if(id==='ball'){
+curBall=ballKey;
+const i=COLORS.findIndex(c=>c.key===ballKey);
+icon=COLORS[i].emoji;title=t('ballTitle')+' '+colorName(i);body=t('ballBody');
+}else{
+const hs=HS.find(h=>h.id===id);
+icon=hs.icon;title=t('hs')[id].t;body=t('hs')[id].b;
+if(ready3d)flyTo(hs.view);
+}
+const el=$('cardBody');
+el.innerHTML='<div class="chead"><span class="cicon">'+icon+'</span><div><div class="ckick">'+kicker+'</div><h3>'+title+'</h3></div></div><p>'+body+'</p><div class="live"><small>'+t('liveLabel')+'</small><span id="liveTxt">'+liveText(id)+'</span></div>';
+el.classList.remove('swap');
+void el.offsetWidth;
+el.classList.add('swap');
+$('card').classList.add('show');
+hsEls.forEach((e,i)=>e.classList.toggle('active',HS[i].id===id));
+Array.from($('dots').children).forEach((d,i)=>d.classList.toggle('on',HS[i].id===id));
+document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.dataset.id===id));
+}
+function closeCard(){
+curCard=null;
+$('card').classList.remove('show');
+hsEls.forEach(e=>e.classList.remove('active'));
+document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+}
+function stepCard(d){
+let i=HS.findIndex(h=>h.id===curCard);
+i=i<0?(d>0?0:HS.length-1):(i+d+HS.length)%HS.length;
+openCard(HS[i].id);
+}
+function refreshCard(){
+if(!curCard)return;
+const el=$('liveTxt');
+if(el)el.innerHTML=liveText(curCard);
+}
+function buildExplore(){
+const box=$('explore');
+box.innerHTML='';
+HS.forEach((h,i)=>{
+const b=document.createElement('button');
+b.type='button';
+b.className='chip';
+b.dataset.id=h.id;
+b.textContent=h.icon+' '+t('hs')[h.id].t;
+b.addEventListener('click',()=>openCard(h.id));
+box.appendChild(b);
+});
+}
+function showToast(text,warn){
+const el=$('toast');
+el.textContent=text;
+el.classList.toggle('warn',!!warn);
+el.classList.add('show');
+clearTimeout(toastTimer);
+toastTimer=setTimeout(()=>el.classList.remove('show'),1700);
+}
+
+function renderExp(){
+const total=sum(counts);
+$('expBars').innerHTML=COLORS.map((c,i)=>{
+const a=pct(results[c.key],totalDraws),th=pct(counts[c.key],total);
+return '<div class="barwrap"><div class="barlabel"><span>'+c.emoji+' '+colorName(i)+' — '+results[c.key]+' '+t('times')+'</span><strong>'+t('actual')+' '+fmt(a)+' / '+t('theory')+' '+fmt(th)+'</strong></div><div class="track"><div class="fill" style="width:'+a+'%;background:'+c.css+'"></div><i class="tick" style="left:'+th+'%"></i></div></div>';
+}).join('');
+}
+function drawTrend(){
+const cv=$('trend');
+const w=cv.clientWidth,h=cv.clientHeight;
+if(!w||!h)return;
+const dpr=Math.min(window.devicePixelRatio||1,2);
+if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+const g=cv.getContext('2d');
+g.setTransform(dpr,0,0,dpr,0,0);
+g.clearRect(0,0,w,h);
+const L=40,Rr=12,Tp=14,B=28,gw=w-L-Rr,gh=h-Tp-B;
+g.font='11px Prompt,Tahoma,sans-serif';
+g.textBaseline='middle';
+g.lineWidth=1;
+g.strokeStyle='rgba(120,130,190,.22)';
+g.fillStyle='#667092';
+g.textAlign='right';
+for(let p=0;p<=100;p+=25){
+const y=Tp+gh*(1-p/100);
+g.beginPath();g.moveTo(L,y);g.lineTo(L+gw,y);g.stroke();
+g.fillText(p+'%',L-6,y);
+}
+const total=sum(counts);
+COLORS.forEach(c=>{
+const y=Tp+gh*(1-pct(counts[c.key],total)/100);
+g.save();
+g.setLineDash([5,4]);
+g.globalAlpha=0.7;
+g.strokeStyle=c.css;
+g.lineWidth=1.6;
+g.beginPath();g.moveTo(L,y);g.lineTo(L+gw,y);g.stroke();
+g.restore();
+});
+const n=hist.red.length;
+if(!n){
+g.fillStyle='#667092';
+g.textAlign='center';
+g.fillText(t('noData'),L+gw/2,Tp+gh/2);
+return;
+}
+COLORS.forEach(c=>{
+const arr=hist[c.key];
+g.strokeStyle=c.css;
+g.fillStyle=c.css;
+g.lineWidth=2.2;
+g.lineJoin='round';
+if(n===1){
+g.beginPath();g.arc(L,Tp+gh*(1-arr[0]/100),3.5,0,Math.PI*2);g.fill();
+return;
+}
+g.beginPath();
+for(let i=0;i<n;i++){
+const x=L+gw*(i/(n-1)),y=Tp+gh*(1-arr[i]/100);
+if(i===0)g.moveTo(x,y);else g.lineTo(x,y);
+}
+g.stroke();
+});
+g.fillStyle='#667092';
+g.textBaseline='top';
+g.textAlign='left';
+g.fillText('1',L,Tp+gh+8);
+g.textAlign='right';
+g.fillText(String(n)+' '+t('times'),L+gw,Tp+gh+8);
+}
+function refreshResults(){
+$('trials').textContent=totalDraws;
+$('last').textContent=lastStr();
+renderExp();
+setTargets();
+drawTrend();
+refreshCard();
+}
+function update(){
+counts={red:+$('red').value,blue:+$('blue').value,green:+$('green').value};
+const total=sum(counts);
+COLORS.forEach(c=>{
+const el=$(c.key);
+el.style.setProperty('--p',((el.value-el.min)/(el.max-el.min)*100)+'%');
+$(c.key+'Val').textContent=counts[c.key]+' '+t('ball');
+});
+const d=$('draws');
+d.style.setProperty('--p',((d.value-d.min)/(d.max-d.min)*100)+'%');
+$('drawsVal').textContent=d.value+' '+t('times');
+$('total').textContent=total;
+$('theory').textContent=fmt(pct(counts.red,total));
+$('theoryBars').innerHTML=COLORS.map((c,i)=>'<div class="barwrap"><div class="barlabel"><span>'+c.emoji+' '+colorName(i)+' — '+counts[c.key]+'/'+total+'</span><strong>'+fmt(pct(counts[c.key],total))+'</strong></div><div class="track"><div class="fill" style="width:'+pct(counts[c.key],total)+'%;background:'+c.css+'"></div></div></div>').join('');
+$('emptyNote').style.display=total?'none':'block';
+syncBalls();
+refreshResults();
+}
+
+function rollColor(){
+const total=sum(counts);
+let n=Math.random()*total;
+for(const c of COLORS){n-=counts[c.key];if(n<0)return c}
+return COLORS[2];
+}
+function record(c){
+results[c.key]++;
+totalDraws++;
+COLORS.forEach(k=>hist[k.key].push(pct(results[k.key],totalDraws)));
+}
+function setRunning(on){
+$('btnRun').disabled=on;
+$('btnStep').disabled=on;
+['red','blue','green','draws'].forEach(id=>{$(id).disabled=on});
+}
+function drawOnce(){
+if(runState)return;
+if(!sum(counts)){showToast(t('alert'),true);return}
+const c=rollColor();
+record(c);
+lastInfo={type:'draw',key:c.key};
+startPick(c.key);
+showToast(c.emoji+' '+colorName(COLORS.indexOf(c)));
+refreshResults();
+}
+function runMany(){
+if(runState)return;
+if(!sum(counts)){showToast(t('alert'),true);return}
+results={red:0,blue:0,green:0};
+totalDraws=0;
+hist.red.length=0;hist.blue.length=0;hist.green.length=0;
+const n=+$('draws').value;
+runState={left:n,n:n,acc:0};
+setRunning(true);
+refreshResults();
+}
+function resetAll(){
+runState=null;
+setRunning(false);
+results={red:0,blue:0,green:0};
+totalDraws=0;
+hist.red.length=0;hist.blue.length=0;hist.green.length=0;
+lastInfo=null;
+update();
+}
+function tickRun(dt){
+if(!runState)return;
+const rate=Math.min(240,Math.max(6,runState.n*0.9));
+runState.acc+=rate*dt;
+let cnt=0,lastC=null;
+while(runState.acc>=1&&runState.left>0){
+lastC=rollColor();
+record(lastC);
+runState.left--;
+runState.acc-=1;
+cnt++;
+}
+if(cnt){
+lastInfo={type:'draw',key:lastC.key};
+if(!pick)startPick(lastC.key);
+}
+if(runState.left<=0){
+lastInfo={type:'run',n:runState.n};
+runState=null;
+setRunning(false);
+showToast('✅ '+t('doneRun')+totalDraws+' '+t('times'));
+refreshResults();
+}else if(cnt){
+refreshResults();
+}
+}
+
+function buildQuiz(){
+$('qlist').innerHTML=QZ.map((q,i)=>'<div class="question"><p id="qp'+i+'"></p><div class="options">'+['a','b','c'].map(v=>'<label><input type="radio" name="'+q.n+'" value="'+v+'"><span id="qo'+i+v+'"></span></label>').join('')+'</div><div class="feedback" id="f'+(i+1)+'"></div></div>').join('');
+}
+function applyQuiz(){
+QZ.forEach((q,i)=>{
+$('qp'+i).textContent=t('q')[i];
+['a','b','c'].forEach((v,j)=>{$('qo'+i+v).textContent=t('qa')[i][j]});
+$('f'+(i+1)).textContent='';
+$('f'+(i+1)).className='feedback';
+});
+$('score').textContent='';
+}
+function celebrate(){
+if(!ready3d)return;
+[0xef476f,0x4d8cff,0x22b39a].forEach((hx,i)=>{
+setTimeout(()=>burst(new THREE.Vector3(0,H+1.7,0),hx,1.6),i*380);
+});
+}
+
+function applyLang(){
+document.documentElement.lang=lang;
+document.title=t('docTitle');
+document.querySelectorAll('[data-i18n]').forEach(el=>{const v=t(el.dataset.i18n);if(v!==undefined)el.textContent=v});
+document.querySelectorAll('[data-i18n-title]').forEach(el=>{const v=t(el.dataset.i18nTitle);el.title=v;el.setAttribute('aria-label',v)});
+$('lang-th').classList.toggle('active',lang==='th');
+$('lang-en').classList.toggle('active',lang==='en');
+$('lang-th').setAttribute('aria-pressed',lang==='th');
+$('lang-en').setAttribute('aria-pressed',lang==='en');
+HS.forEach((h,i)=>{hsEls[i].querySelector('.tip').textContent=t('hs')[h.id].t});
+buildExplore();
+applyQuiz();
+if(curCard){openCard(curCard,curBall)}
+update();
+}
+
+function resize(){
+const w=stage.clientWidth,h=stage.clientHeight;
+if(!ready3d||!w||!h)return;
+renderer.setSize(w,h,false);
+camera.aspect=w/h;
+camera.updateProjectionMatrix();
+const portrait=w/h<1.15;
+if(wasPortrait!==null&&wasPortrait!==portrait)flyTo('home',true);
+wasPortrait=portrait;
+}
+
+const ray=has3D?new THREE.Raycaster():null;
+const mouse=has3D?new THREE.Vector2():null;
+let downPt=null;
+function bindCanvas(){
+const cv=$('gl');
+cv.addEventListener('pointerdown',e=>{downPt={x:e.clientX,y:e.clientY}});
+cv.addEventListener('pointerup',e=>{
+if(!downPt||!ready3d)return;
+const moved=Math.hypot(e.clientX-downPt.x,e.clientY-downPt.y);
+downPt=null;
+if(moved>6)return;
+const r=cv.getBoundingClientRect();
+mouse.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+ray.setFromCamera(mouse,camera);
+const hit=ray.intersectObjects(balls.map(b=>b.mesh),false)[0];
+if(!hit)return;
+const b=balls.find(x=>x.mesh===hit.object);
+if(!b)return;
+b.flash=1;
+const wp=new THREE.Vector3();
+b.mesh.getWorldPosition(wp);
+burst(jarGroup.worldToLocal(wp.clone()),COLORS.find(c=>c.key===b.color).hex,0.6);
+openCard('ball',b.color);
+});
+}
+
+let lastT=performance.now();
+function frame(now){
+requestAnimationFrame(frame);
+const dt=Math.min(0.05,(now-lastT)/1000);
+lastT=now;
+tickRun(dt);
+if(!ready3d)return;
+stepPhysics(dt/2);
+stepPhysics(dt/2);
+updateBalls(dt);
+updatePick(dt*(runState?2.2:1));
+updateBurst(dt);
+updateBars(dt);
+dust.rotation.y+=dt*0.02;
+if(tween){
+const k=Math.min(1,(now-tween.t0)/tween.dur);
+const e=k<0.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+camera.position.lerpVectors(tween.p0,tween.p1,e);
+controls.target.lerpVectors(tween.q0,tween.q1,e);
+if(k>=1)tween=null;
+}
+controls.update();
+placeHotspots();
+renderer.render(scene,camera);
+}
+
+function init(){
+buildQuiz();
+if(has3D){
+buildHotspots();
+try{build3D()}catch(err){$('fallback').style.display='grid'}
+}else{
+$('fallback').style.display='grid';
+}
+['red','blue','green','draws'].forEach(id=>$(id).addEventListener('input',update));
+$('btnRun').addEventListener('click',runMany);
+$('btnStep').addEventListener('click',drawOnce);
+$('btnClear').addEventListener('click',resetAll);
+$('btnView').addEventListener('click',()=>flyTo('home'));
+$('btnRotate').addEventListener('click',()=>{
+if(!ready3d)return;
+controls.autoRotate=!controls.autoRotate;
+$('btnRotate').classList.toggle('on',controls.autoRotate);
+});
+$('cardClose').addEventListener('click',closeCard);
+$('cardPrev').addEventListener('click',()=>stepCard(-1));
+$('cardNext').addEventListener('click',()=>stepCard(1));
+document.querySelectorAll('.tab').forEach(tb=>tb.addEventListener('click',()=>{
+document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===tb));
+document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+tb.dataset.tab));
+if(tb.dataset.tab==='res')drawTrend();
+}));
+$('lang-th').addEventListener('click',()=>{lang='th';applyLang()});
+$('lang-en').addEventListener('click',()=>{lang='en';applyLang()});
+$('quiz').addEventListener('submit',e=>{
+e.preventDefault();
+let s=0;
+QZ.forEach((q,i)=>{
+const ch=document.querySelector('input[name="'+q.n+'"]:checked');
+const f=$('f'+(i+1));
+if(ch&&ch.value===q.c){s++;f.className='feedback correct';f.textContent=t('correct')+t('explanations')[i]}
+else{f.className='feedback incorrect';f.textContent=t('incorrect')+t('explanations')[i]}
+});
+$('score').textContent=t('score')+s+'/3'+(s===3?' 🎉':'');
+if(s===3)celebrate();
+});
+$('showAnswers').addEventListener('click',()=>{
+QZ.forEach((q,i)=>{$('f'+(i+1)).className='feedback';$('f'+(i+1)).textContent=t('explanations')[i]});
+});
+$('clearQuiz').addEventListener('click',()=>{
+$('quiz').reset();
+for(let i=1;i<=3;i++){$('f'+i).textContent='';$('f'+i).className='feedback'}
+$('score').textContent='';
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCard()});
+if(has3D){
+bindCanvas();
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(resize).observe(stage);
+window.addEventListener('resize',resize);
+}
+window.addEventListener('resize',drawTrend);
+setTimeout(()=>$('hint').classList.add('hide'),12000);
+applyLang();
+requestAnimationFrame(frame);
+}
+init();
+})();
+</script>
+</body>
+</html>
